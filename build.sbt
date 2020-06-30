@@ -783,6 +783,8 @@ lazy val runtime = (project in file("engine/runtime"))
  * recompilation but still convince the IDE that it is a .jar dependency.
  */
 
+import com.typesafe.sbt.packager.docker._
+
 lazy val runner = project
   .in(file("engine/runner"))
   .settings(
@@ -860,6 +862,31 @@ lazy val runner = project
         .dependsOn(runtime / assembly)
         .value
   )
+  .settings(
+    publishLocal in Docker := (publishLocal in Docker)
+        .dependsOn(assembly)
+        .dependsOn(runtime / assembly)
+        .value,
+    packageName in Docker := "enso",
+    dockerExposedPorts := Seq(30001, 30002),
+    mappings in Docker += file("runtime.jar") -> "runtime.jar",
+    mappings in Docker += file("enso.jar")    -> "enso.jar",
+    dockerCommands := Seq(
+        Cmd("FROM", "oracle/graalvm-ce:20.1.0-java8"),
+        Cmd("ADD", "enso.jar", "/opt/enso/enso.jar"),
+        Cmd("ADD", "runtime.jar", "/opt/enso/runtime.jar"),
+        Cmd("WORKDIR", "/opt/enso"),
+        Cmd(
+          "ENTRYPOINT",
+          """["java" , "-jar", "-Dtruffle.class.path.append=runtime.jar", "enso.jar"]"""
+        ),
+        Cmd(
+          "CMD",
+          """["--server", "--rpc-port", "30001", "--data-port", "30002", "--root-id", "00000000-0000-0000-0000-000000000001", "--path", "/", "--interface", "0.0.0.0"]"""
+        )
+      )
+  )
+  .enablePlugins(DockerPlugin, JavaAppPackaging)
   .dependsOn(pkg)
   .dependsOn(`language-server`)
   .dependsOn(`polyglot-api`)
