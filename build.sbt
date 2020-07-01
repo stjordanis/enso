@@ -942,8 +942,24 @@ lazy val runner = project
     mappings in Docker += file("enso.jar")    -> "enso.jar",
     dockerCommands := Seq(
         Cmd("FROM", "oracle/graalvm-ce:20.1.0-java11"),
+        Cmd("USER", "root"),
+        Cmd("RUN", "groupadd", "-g", "1001", "enso"),
+        Cmd(
+          "RUN",
+          "useradd",
+          "--system",
+          "--create-home",
+          "--uid",
+          "1001",
+          "--gid",
+          "1001",
+          "enso"
+        ),
         Cmd("ADD", "enso.jar", "/opt/enso/enso.jar"),
         Cmd("ADD", "runtime.jar", "/opt/enso/runtime.jar"),
+        Cmd("RUN", "chown", "-hR", "enso:enso", "/opt/enso"),
+        Cmd("RUN", "chmod", "-R", "u=rX,g=rX", "/opt/enso"),
+        Cmd("USER", "1001:1001"),
         Cmd("WORKDIR", "/opt/enso"),
         Cmd(
           "ENTRYPOINT",
