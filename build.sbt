@@ -417,6 +417,11 @@ lazy val `text-buffer` = project
         "org.scalacheck" %% "scalacheck" % scalacheckVersion % Test
       )
   )
+  .settings(
+    publishArtifact in (Docker, packageDoc) := false,
+    publishArtifact in packageDoc := false,
+    sources in (Docker, doc) := Seq.empty
+  )
 
 lazy val graph = (project in file("lib/graph/"))
   .dependsOn(logger.jvm)
@@ -453,6 +458,11 @@ lazy val pkg = (project in file("lib/pkg"))
         "io.circe"  %% "circe-yaml" % circeYamlVersion, // separate from other circe deps because its independent project with its own versioning
         "commons-io" % "commons-io" % commonsIoVersion
       )
+  )
+  .settings(
+    publishArtifact in (Docker, packageDoc) := false,
+    publishArtifact in packageDoc := false,
+    sources in (Docker, doc) := Seq.empty
   )
 
 lazy val `project-manager` = (project in file("lib/project-manager"))
@@ -555,6 +565,11 @@ lazy val `json-rpc-server` = project
         "org.scalatest" %% "scalatest"     % scalatestVersion % Test
       )
   )
+  .settings(
+    publishArtifact in (Docker, packageDoc) := false,
+    publishArtifact in packageDoc := false,
+    sources in (Docker, doc) := Seq.empty
+  )
 
 lazy val `json-rpc-server-test` = project
   .in(file("lib/json-rpc-server-test"))
@@ -566,6 +581,11 @@ lazy val `json-rpc-server-test` = project
         akkaTestkit,
         "org.scalatest" %% "scalatest" % scalatestVersion
       )
+  )
+  .settings(
+    publishArtifact in (Docker, packageDoc) := false,
+    publishArtifact in packageDoc := false,
+    sources in (Docker, doc) := Seq.empty
   )
   .dependsOn(`json-rpc-server`)
 
@@ -606,6 +626,11 @@ lazy val searcher = project
         "org.xerial"          % "sqlite-jdbc" % sqliteVersion,
         "org.scalatest"      %% "scalatest"   % scalatestVersion % Test
       )
+  )
+  .settings(
+    publishArtifact in (Docker, packageDoc) := false,
+    publishArtifact in packageDoc := false,
+    sources in (Docker, doc) := Seq.empty
   )
   .dependsOn(`json-rpc-server-test` % Test)
 
@@ -652,6 +677,11 @@ lazy val `polyglot-api` = project
     GenerateFlatbuffers.flatcVersion := flatbuffersVersion,
     sourceGenerators in Compile += GenerateFlatbuffers.task
   )
+  .settings(
+    publishArtifact in (Docker, packageDoc) := false,
+    publishArtifact in packageDoc := false,
+    sources in (Docker, doc) := Seq.empty
+  )
   .dependsOn(pkg)
   .dependsOn(`text-buffer`)
   .dependsOn(`searcher`)
@@ -688,6 +718,11 @@ lazy val `language-server` = (project in file("engine/language-server"))
     testFrameworks ++= List(
         new TestFramework("org.scalameter.ScalaMeterFramework")
       )
+  )
+  .settings(
+    publishArtifact in (Docker, packageDoc) := false,
+    publishArtifact in packageDoc := false,
+    sources in (Docker, doc) := Seq.empty
   )
   .dependsOn(`polyglot-api`)
   .dependsOn(`json-rpc-server`)
@@ -897,12 +932,16 @@ lazy val runner = project
         .dependsOn(assembly)
         .dependsOn(runtime / assembly)
         .value,
+    (Docker / compile / skip) := true,
+    publishArtifact in (Docker, packageDoc) := false,
+    publishArtifact in packageDoc := false,
+    sources in (Docker, doc) := Seq.empty,
     packageName in Docker := "enso",
     dockerExposedPorts := Seq(30001, 30002),
     mappings in Docker += file("runtime.jar") -> "runtime.jar",
     mappings in Docker += file("enso.jar")    -> "enso.jar",
     dockerCommands := Seq(
-        Cmd("FROM", "oracle/graalvm-ce:20.1.0-java8"),
+        Cmd("FROM", "oracle/graalvm-ce:20.1.0-java11"),
         Cmd("ADD", "enso.jar", "/opt/enso/enso.jar"),
         Cmd("ADD", "runtime.jar", "/opt/enso/runtime.jar"),
         Cmd("WORKDIR", "/opt/enso"),
