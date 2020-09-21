@@ -588,10 +588,31 @@ lazy val `project-manager` = (project in file("lib/scala/project-manager"))
         .dependsOn(runtime / assembly)
         .value
   )
+.settings(
+    buildNativeImage := NativeImage
+        .buildNativeImage(
+          "project-manager",
+          staticOnLinux = true,
+          Seq(
+            "--enable-all-security-services", // Note [HTTPS in the Launcher]
+//            "-H:IncludeResources=.*Main.enso$",
+            "--report-unsupported-elements-at-runtime", // FIXME debug
+            "-H:+TraceClassInitialization",
+            "-H:+AllowIncompleteClasspath",
+            "--initialize-at-run-time=" +
+            "akka.protobuf.DescriptorProtos," +
+            "io.methvin.watchservice.jna.CarbonAPI"
+//            "com.typesafe.config.impl.ConfigImpl$EnvVariablesHolder," + // TODO this should be added back
+//            "com.typesafe.config.impl.ConfigImpl$SystemPropertiesHolder"
+          )
+        )
+        .value
+  )
   .settings(licenseSettings)
   .dependsOn(`version-output`)
   .dependsOn(pkg)
   .dependsOn(`language-server`)
+  .dependsOn(`logging-service-server`)
   .dependsOn(`json-rpc-server`)
   .dependsOn(`json-rpc-server-test` % Test)
   .dependsOn(testkit % Test)
